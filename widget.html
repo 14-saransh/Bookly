@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Bookly - FitZone Gym</title>
+<style>
+  :root {
+    --ink: #1c2b23;
+    --paper: #f2f5f1;
+    --line: #d6ddd3;
+    --moss: #3f6b4f;
+    --moss-dark: #2c4d38;
+    --ember: #e0703a;
+    --bubble-user: #3f6b4f;
+    --bubble-bot: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+  }
+  .phone {
+    width: 380px;
+    max-width: 100%;
+    height: 640px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(28,43,35,0.18);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--line);
+  }
+  .header {
+    background: var(--moss-dark);
+    color: #fff;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .header .avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--ember);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 18px;
+  }
+  .header .info h1 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+  }
+  .header .info p {
+    margin: 2px 0 0;
+    font-size: 11px;
+    opacity: 0.8;
+  }
+  .messages {
+    flex: 1;
+    padding: 18px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: var(--paper);
+  }
+  .msg {
+    max-width: 82%;
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-size: 14px;
+    line-height: 1.45;
+    white-space: pre-line;
+  }
+  .msg.bot {
+    background: var(--bubble-bot);
+    color: var(--ink);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+    border: 1px solid var(--line);
+  }
+  .msg.user {
+    background: var(--bubble-user);
+    color: #fff;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+  .input-row {
+    display: flex;
+    border-top: 1px solid var(--line);
+    padding: 12px;
+    gap: 8px;
+    background: #fff;
+  }
+  .input-row input {
+    flex: 1;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 10px 16px;
+    font-size: 14px;
+    outline: none;
+  }
+  .input-row input:focus {
+    border-color: var(--moss);
+  }
+  .input-row button {
+    background: var(--moss);
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    padding: 0 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .input-row button:hover {
+    background: var(--moss-dark);
+  }
+  .quick-replies {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0 18px 12px;
+  }
+  .quick-replies button {
+    background: #fff;
+    border: 1px solid var(--moss);
+    color: var(--moss-dark);
+    border-radius: 14px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .quick-replies button:hover {
+    background: var(--moss);
+    color: #fff;
+  }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="header">
+    <div class="avatar">F</div>
+    <div class="info">
+      <h1>FitZone Gym</h1>
+      <p>Typically replies instantly · Powered by Bookly</p>
+    </div>
+  </div>
+  <div class="messages" id="messages"></div>
+  <div class="quick-replies" id="quickReplies">
+    <button onclick="sendQuick('Book a session')">Book a session</button>
+    <button onclick="sendQuick('Pricing')">Pricing</button>
+    <button onclick="sendQuick('Timing')">Timing</button>
+  </div>
+  <div class="input-row">
+    <input id="input" type="text" placeholder="Type a message..." onkeydown="if(event.key==='Enter') sendMessage()">
+    <button onclick="sendMessage()">Send</button>
+  </div>
+</div>
+
+<script>
+const API_URL = "/chat";
+const sessionId = "demo_" + Math.random().toString(36).slice(2);
+const messagesEl = document.getElementById("messages");
+const inputEl = document.getElementById("input");
+
+function addMessage(text, sender) {
+  const div = document.createElement("div");
+  div.className = "msg " + sender;
+  div.textContent = text;
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+async function sendToBot(message) {
+  addMessage(message, "user");
+  inputEl.value = "";
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: sessionId, message: message }),
+    });
+    const data = await res.json();
+    addMessage(data.reply, "bot");
+  } catch (err) {
+    addMessage("Sorry, I'm having trouble connecting. Please try again.", "bot");
+  }
+}
+
+function sendMessage() {
+  const msg = inputEl.value.trim();
+  if (!msg) return;
+  sendToBot(msg);
+}
+
+function sendQuick(text) {
+  sendToBot(text);
+}
+
+// Initial greeting
+window.onload = () => {
+  sendToBot("hi");
+};
+</script>
+
+</body>
+</html>
