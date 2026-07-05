@@ -34,20 +34,25 @@ def status():
 
 @app.post("/chat")
 def chat(payload: ChatMessage):
-    reply = handle_message(payload.session_id, payload.message)
+    try:
+        reply = handle_message(payload.session_id, payload.message)
 
-    if reply == "booking_confirmed":
-        session = get_session(payload.session_id)
-        data = session["data"]
-        save_booking(
-            service=data.get("service", ""),
-            time_slot=data.get("time", ""),
-            customer_name=data.get("name", ""),
-            phone=data.get("phone", ""),
-        )
-        reply = f"✅ Booking confirmed! We'll see you then, {data.get('name', '')}. See you at {BUSINESS['name']}!"
+        if reply == "booking_confirmed":
+            session = get_session(payload.session_id)
+            data = session["data"]
+            save_booking(
+                service=data.get("service", ""),
+                time_slot=data.get("time", ""),
+                customer_name=data.get("name", ""),
+                phone=data.get("phone", ""),
+            )
+            reply = f"✅ Booking confirmed! We'll see you then, {data.get('name', '')}. See you at {BUSINESS['name']}!"
 
-    return {"reply": reply}
+        return {"reply": reply}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"reply": f"⚠️ Something went wrong on our end: {str(e)}"}
 
 
 @app.get("/bookings")
